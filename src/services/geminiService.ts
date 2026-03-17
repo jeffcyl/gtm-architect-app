@@ -3,7 +3,9 @@ import { jsonrepair } from 'jsonrepair';
 import { GTMPlaybook } from '../types';
 
 // Initialize with the default API key for text generation
-const getAi = () => new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const getAi = () => new GoogleGenAI({
+  apiKey: import.meta.env.VITE_GEMINI_API_KEY
+});
 
 export const generateGTMPlaybookStream = async function* (
   prompt: string,
