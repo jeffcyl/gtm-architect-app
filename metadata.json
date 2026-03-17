@@ -1,0 +1,5 @@
+{
+  "name": "GTM Architect",
+  "description": "Generate complete Go-To-Market playbooks and Integrated Marketing Communications materials with visuals.",
+  "requestFramePermissions": ["microphone"]
+}
