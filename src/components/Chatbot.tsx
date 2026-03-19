@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { GoogleGenAI } from '@google/genai';
 import { Send, Sparkles, User, Loader2 } from 'lucide-react';
-import { Language } from '../types';
+import { Language, GTMPlaybook } from '../types';
 import { translations } from '../translations';
 import { motion } from 'motion/react';
 
@@ -13,34 +13,36 @@ interface Message {
 
 interface Props {
   language: Language;
+  playbook: GTMPlaybook | null;
 }
 
-export const Chatbot = ({ language }: Props) => {
+export const Chatbot = ({ language, playbook }: Props) => {
   const t = translations[language];
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>(() => {
+    const saved = localStorage.getItem('gtm_chat_history');
+    return saved ? JSON.parse(saved) : [{ id: '1', role: 'model', text: t.chatInitial }];
+  });
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const chatRef = useRef<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Initialize chat and set initial message when language changes
+  // Persist messages to localStorage
   useEffect(() => {
-    setMessages([{ id: '1', role: 'model', text: t.chatInitial }]);
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-    chatRef.current = ai.chats.create({
-      model: 'gemini-3.1-pro-preview',
-      config: {
-        systemInstruction: `You are a world-class Chief Marketing Officer (CMO) and GTM expert helping a user refine their strategy and IMC materials. Be concise, strategic, highly actionable, and use professional marketing frameworks (like 4Ps, STP, OKRs). Respond in ${language}.`,
-      }
-    });
-  }, [language, t.chatInitial]);
+    localStorage.setItem('gtm_chat_history', JSON.stringify(messages));
+  }, [messages]);
+
+  // Initialize chat session
+  useEffect(() => {
+    chatRef.current = null; // Reset session when context or language changes
+  }, [language, playbook?.strategyMarkdown]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   const handleSend = async () => {
-    if (!input.trim() || !chatRef.current) return;
+    if (!input.trim()) return;
     
     const userMsg = input.trim();
     setInput('');
@@ -48,14 +50,58 @@ export const Chatbot = ({ language }: Props) => {
     setIsLoading(true);
 
     try {
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey) {
+        throw new Error('API Key is missing. Please set GEMINI_API_KEY in Settings > Secrets.');
+      }
+
+      const ai = new GoogleGenAI({ apiKey });
+      
+      if (!chatRef.current) {
+        const strategyContext = playbook?.strategyMarkdown 
+          ? `\n\nCURRENT GTM STRATEGY CONTEXT:\n${playbook.strategyMarkdown}`
+          : '';
+
+        chatRef.current = ai.chats.create({
+          model: 'gemini-3-flash-preview',
+          config: {
+            systemInstruction: `You are a world-class Chief Marketing Officer (CMO) and GTM expert helping a user refine their strategy and IMC materials. 
+            Be concise, strategic, highly actionable, and use professional marketing frameworks (like 4Ps, STP, OKRs). 
+            Respond in ${language}.${strategyContext}`,
+          },
+          // Restore history to the chat session so it has "memory" of previous turns
+          history: messages.map(m => ({
+            role: m.role === 'user' ? 'user' : 'model',
+            parts: [{ text: m.text }]
+          }))
+        });
+      }
+
       const response = await chatRef.current.sendMessage({ message: userMsg });
-      setMessages(prev => [...prev, { id: Date.now().toString(), role: 'model', text: response.text }]);
-    } catch (error) {
+      const text = response.text;
+      
+      if (!text) {
+        throw new Error('Empty response from AI.');
+      }
+
+      setMessages(prev => [...prev, { id: Date.now().toString(), role: 'model', text }]);
+    } catch (error: any) {
       console.error('Chat error:', error);
-      setMessages(prev => [...prev, { id: Date.now().toString(), role: 'model', text: 'Sorry, I encountered an error. Please try again.' }]);
+      let errorMsg = 'Sorry, I encountered an error. Please try again.';
+      if (error.message?.includes('API Key')) {
+        errorMsg = error.message;
+      } else if (error.message?.includes('quota')) {
+        errorMsg = 'API quota exceeded. Please try again later.';
+      }
+      setMessages(prev => [...prev, { id: Date.now().toString(), role: 'model', text: errorMsg }]);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const clearHistory = () => {
+    setMessages([{ id: Date.now().toString(), role: 'model', text: t.chatInitial }]);
+    chatRef.current = null;
   };
 
   return (
@@ -65,6 +111,18 @@ export const Chatbot = ({ language }: Props) => {
       transition={{ duration: 0.5 }}
       className="flex flex-col h-[650px] bg-white/80 backdrop-blur-xl rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-rose-100 overflow-hidden"
     >
+      <div className="p-4 border-b border-rose-50 flex justify-between items-center bg-white/50">
+        <div className="flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-rose-500" />
+          <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">{t.tabChat}</span>
+        </div>
+        <button 
+          onClick={clearHistory}
+          className="text-[10px] font-bold text-slate-400 hover:text-rose-500 transition-colors uppercase tracking-widest"
+        >
+          {language === 'English' ? 'Clear History' : '清除紀錄'}
+        </button>
+      </div>
       <div className="flex-1 overflow-y-auto p-8 space-y-8 scroll-smooth">
         {messages.map((msg, idx) => (
           <motion.div 

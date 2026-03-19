@@ -12,3 +12,15 @@ body {
   color: #2D2422;
 }
 
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background-color: white !important;
+  }
+  main {
+    padding: 0 !important;
+  }
+}
+

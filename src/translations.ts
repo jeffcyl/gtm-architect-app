@@ -30,7 +30,18 @@ export const translations = {
     errorSpeechNotSupported: 'Speech recognition is not supported in your browser.',
     errorMicDenied: 'Microphone access was denied. Please allow microphone access in your browser settings to use voice input.',
     startDictation: 'Start Voice Input',
-    stopDictation: 'Stop Voice Input'
+    stopDictation: 'Stop Voice Input',
+    btnRetry: 'Taking too long? Click to Retry',
+    autoSaved: 'Auto-Saved to Local',
+    statusStrategy: 'Architecting Strategic Framework...',
+    statusIMC: 'Finalizing Integrated Marketing Materials...',
+    statusMoreIMC: 'Architecting more materials...',
+    confirmResetTitle: 'Start Over?',
+    confirmResetMessage: 'Are you sure you want to start over? All current progress will be lost.',
+    btnConfirm: 'Confirm',
+    btnCancel: 'Cancel',
+    refineSection: 'Refine Section',
+    refinePlaceholder: 'e.g., Make this more aggressive, add more data points...'
   },
   'Traditional Chinese': {
     appTitle: 'GTM 策略架構師',
@@ -61,7 +72,18 @@ export const translations = {
     errorSpeechNotSupported: '您的瀏覽器不支援語音輸入功能。',
     errorMicDenied: '麥克風存取被拒絕。請在瀏覽器設定中允許麥克風存取以使用語音輸入。',
     startDictation: '開始語音輸入',
-    stopDictation: '停止語音輸入'
+    stopDictation: '停止語音輸入',
+    btnRetry: '等太久了嗎？點擊重試',
+    autoSaved: '已自動儲存至本地',
+    statusStrategy: '策略架構建構中...',
+    statusIMC: '整合行銷素材完善中...',
+    statusMoreIMC: '更多素材建構中...',
+    confirmResetTitle: '重新開始？',
+    confirmResetMessage: '您確定要重新開始嗎？目前的所有進度都將遺失。',
+    btnConfirm: '確定',
+    btnCancel: '取消',
+    refineSection: '優化此章節',
+    refinePlaceholder: '例如：口吻更積極一點、加入更多數據...'
   }
 };
 
